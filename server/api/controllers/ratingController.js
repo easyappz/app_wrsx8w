@@ -1,5 +1,5 @@
-const Photo = require('../../models/Photo');
-const User = require('../../models/User');
+const Photo = require('../../../models/Photo');
+const User = require('../../../models/User');
 
 // Rate a photo
 exports.ratePhoto = async (req, res) => {
