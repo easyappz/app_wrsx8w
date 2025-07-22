@@ -3,30 +3,30 @@ const User = require('../../models/User');
 // Get user profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password -resetToken -resetTokenExpiry');
+    const user = await User.findById(req.user.id).select('-password -resetPasswordToken -resetPasswordExpires');
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json({ user });
+    res.json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch profile: ' + error.message });
   }
 };
 
 // Update user profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, gender, age } = req.body;
-    const user = await User.findById(req.user.userId);
+    const updates = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: updates },
+      { new: true, select: '-password -resetPasswordToken -resetPasswordExpires' }
+    );
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    if (name) user.name = name;
-    if (gender) user.gender = gender;
-    if (age) user.age = age;
-    await user.save();
-    res.json({ message: 'Profile updated', user: { id: user._id, email: user.email, name: user.name, gender: user.gender, age: user.age, points: user.points } });
+    res.json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to update profile: ' + error.message });
   }
 };

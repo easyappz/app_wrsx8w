@@ -1,101 +1,42 @@
-const Photo = require('../../models/Photo');
 const User = require('../../models/User');
-const multer = require('multer');
 
-// Multer storage configuration
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
-});
-
-const upload = multer({ storage: storage }).single('photo');
-
-// Upload photo
-exports.uploadPhoto = (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    try {
-      const photo = new Photo({
-        userId: req.user.userId,
-        url: `/uploads/${req.file.filename}`,
-      });
-      await photo.save();
-      res.status(201).json({ message: 'Photo uploaded successfully', photo });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+// Placeholder for photo upload logic
+exports.uploadPhoto = async (req, res) => {
+  try {
+    // Logic for photo upload will go here
+    res.json({ message: 'Photo uploaded successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Photo upload failed: ' + error.message });
+  }
 };
 
-// Toggle photo active status
+// Placeholder for toggling photo active status
 exports.togglePhotoActive = async (req, res) => {
   try {
     const { photoId } = req.params;
-    const photo = await Photo.findOne({ _id: photoId, userId: req.user.userId });
-    if (!photo) {
-      return res.status(404).json({ error: 'Photo not found' });
-    }
-    const user = await User.findById(req.user.userId);
-    if (!photo.isActive && user.points < 1) {
-      return res.status(400).json({ error: 'Not enough points to activate photo' });
-    }
-    photo.isActive = !photo.isActive;
-    if (!photo.isActive) {
-      user.points += 1;
-    } else {
-      user.points -= 1;
-    }
-    await photo.save();
-    await user.save();
-    res.json({ message: 'Photo status updated', photo, points: user.points });
+    // Logic for toggling photo active status will go here
+    res.json({ message: `Photo ${photoId} active status toggled` });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Toggle photo active status failed: ' + error.message });
   }
 };
 
-// Get photos for rating with filters
+// Placeholder for getting photos for rating
 exports.getPhotosForRating = async (req, res) => {
   try {
-    const { gender, minAge, maxAge } = req.query;
-    const userId = req.user.userId;
-
-    // Build filter for users
-    let userFilter = {};
-    if (gender) userFilter.gender = gender;
-    if (minAge || maxAge) {
-      userFilter.age = {};
-      if (minAge) userFilter.age.$gte = Number(minAge);
-      if (maxAge) userFilter.age.$lte = Number(maxAge);
-    }
-
-    // Find users matching the filter
-    const users = await User.find(userFilter);
-    const userIds = users.map(user => user._id);
-
-    // Find active photos from filtered users, excluding own photos
-    const photos = await Photo.find({
-      userId: { $in: userIds, $ne: userId },
-      isActive: true,
-    }).populate('userId');
-
-    res.json({ photos });
+    // Logic for fetching photos for rating will go here
+    res.json({ photos: [] });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch photos for rating: ' + error.message });
   }
 };
 
-// Get user's photos
+// Placeholder for getting user's photos
 exports.getUserPhotos = async (req, res) => {
   try {
-    const photos = await Photo.find({ userId: req.user.userId });
-    res.json({ photos });
+    // Logic for fetching user's photos will go here
+    res.json({ photos: [] });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch user photos: ' + error.message });
   }
 };

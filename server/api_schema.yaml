@@ -1,13 +1,11 @@
 openapi: 3.0.0
 info:
-  title: Photo Rating API
+  title: Photo Rating App API
   version: 1.0.0
-  description: API for a photo rating application with user authentication, photo upload, and rating system.
-
+  description: API for a photo rating application with user authentication and photo management.
 servers:
-  - url: /api
-    description: Base API URL
-
+  - url: http://localhost:3001/api
+    description: Local development server
 paths:
   /register:
     post:
@@ -21,16 +19,10 @@ paths:
               properties:
                 email:
                   type: string
+                  example: user@example.com
                 password:
                   type: string
-                name:
-                  type: string
-                gender:
-                  type: string
-                  enum: [male, female, other]
-                age:
-                  type: number
-              required: [email, password, name, gender, age]
+                  example: password123
       responses:
         '201':
           description: User registered successfully
@@ -39,25 +31,11 @@ paths:
               schema:
                 type: object
                 properties:
-                  token:
+                  message:
                     type: string
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      name:
-                        type: string
-                      gender:
-                        type: string
-                      age:
-                        type: number
-                      points:
-                        type: number
+                    example: User registered successfully
         '400':
-          description: Email already registered
+          description: Bad request
           content:
             application/json:
               schema:
@@ -65,6 +43,17 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Email and password are required
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User with this email already exists
         '500':
           description: Server error
           content:
@@ -74,10 +63,10 @@ paths:
                 properties:
                   error:
                     type: string
-
+                    example: Registration failed
   /login:
     post:
-      summary: Login user
+      summary: Login a user and get JWT token
       requestBody:
         required: true
         content:
@@ -87,9 +76,10 @@ paths:
               properties:
                 email:
                   type: string
+                  example: user@example.com
                 password:
                   type: string
-              required: [email, password]
+                  example: password123
       responses:
         '200':
           description: Login successful
@@ -100,23 +90,9 @@ paths:
                 properties:
                   token:
                     type: string
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      name:
-                        type: string
-                      gender:
-                        type: string
-                      age:
-                        type: number
-                      points:
-                        type: number
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         '400':
-          description: Invalid credentials
+          description: Bad request
           content:
             application/json:
               schema:
@@ -124,6 +100,27 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Email and password are required
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid password
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User not found
         '500':
           description: Server error
           content:
@@ -133,10 +130,10 @@ paths:
                 properties:
                   error:
                     type: string
-
+                    example: Login failed
   /request-reset-password:
     post:
-      summary: Request password reset
+      summary: Request password reset token
       requestBody:
         required: true
         content:
@@ -146,10 +143,10 @@ paths:
               properties:
                 email:
                   type: string
-              required: [email]
+                  example: user@example.com
       responses:
         '200':
-          description: Reset token generated
+          description: Password reset token generated
           content:
             application/json:
               schema:
@@ -157,10 +154,12 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: Password reset token generated
                   resetToken:
                     type: string
-        '404':
-          description: User not found
+                    example: abcd1234xyz
+        '400':
+          description: Bad request
           content:
             application/json:
               schema:
@@ -168,6 +167,17 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Email is required
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User not found
         '500':
           description: Server error
           content:
@@ -177,10 +187,10 @@ paths:
                 properties:
                   error:
                     type: string
-
+                    example: Password reset request failed
   /reset-password:
     post:
-      summary: Reset password
+      summary: Reset user password
       requestBody:
         required: true
         content:
@@ -188,11 +198,15 @@ paths:
             schema:
               type: object
               properties:
+                email:
+                  type: string
+                  example: user@example.com
                 resetToken:
                   type: string
+                  example: abcd1234xyz
                 newPassword:
                   type: string
-              required: [resetToken, newPassword]
+                  example: newpassword123
       responses:
         '200':
           description: Password reset successful
@@ -203,8 +217,9 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: Password reset successfully
         '400':
-          description: Invalid or expired token
+          description: Bad request
           content:
             application/json:
               schema:
@@ -212,6 +227,7 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Email, reset token, and new password are required
         '500':
           description: Server error
           content:
@@ -221,7 +237,7 @@ paths:
                 properties:
                   error:
                     type: string
-
+                    example: Password reset failed
   /profile:
     get:
       summary: Get user profile
@@ -229,29 +245,21 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: User profile retrieved
+          description: User profile data
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      name:
-                        type: string
-                      gender:
-                        type: string
-                      age:
-                        type: number
-                      points:
-                        type: number
+                  _id:
+                    type: string
+                  email:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
         '401':
-          description: Authentication token missing
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -259,8 +267,9 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Authentication token missing
         '403':
-          description: Invalid token
+          description: Forbidden
           content:
             application/json:
               schema:
@@ -268,8 +277,9 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Invalid token
         '404':
-          description: User not found
+          description: Not found
           content:
             application/json:
               schema:
@@ -277,6 +287,7 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: User not found
         '500':
           description: Server error
           content:
@@ -286,6 +297,7 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Failed to fetch profile
     put:
       summary: Update user profile
       security:
@@ -297,40 +309,26 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                email:
                   type: string
-                gender:
-                  type: string
-                  enum: [male, female, other]
-                age:
-                  type: number
+                  example: updated@example.com
       responses:
         '200':
-          description: Profile updated
+          description: Updated user profile data
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
+                  _id:
                     type: string
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      name:
-                        type: string
-                      gender:
-                        type: string
-                      age:
-                        type: number
-                      points:
-                        type: number
+                  email:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
         '401':
-          description: Authentication token missing
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -338,8 +336,9 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Authentication token missing
         '403':
-          description: Invalid token
+          description: Forbidden
           content:
             application/json:
               schema:
@@ -347,8 +346,9 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: Invalid token
         '404':
-          description: User not found
+          description: Not found
           content:
             application/json:
               schema:
@@ -356,6 +356,7 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: User not found
         '500':
           description: Server error
           content:
@@ -365,423 +366,7 @@ paths:
                 properties:
                   error:
                     type: string
-
-  /photos/upload:
-    post:
-      summary: Upload a photo
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                photo:
-                  type: string
-                  format: binary
-              required: [photo]
-      responses:
-        '201':
-          description: Photo uploaded successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  photo:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      url:
-                        type: string
-                      isActive:
-                        type: boolean
-        '401':
-          description: Authentication token missing
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '403':
-          description: Invalid token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
-  /photos/{photoId}/toggle-active:
-    put:
-      summary: Toggle photo active status
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: photoId
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Photo status updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  photo:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      url:
-                        type: string
-                      isActive:
-                        type: boolean
-                  points:
-                    type: number
-        '400':
-          description: Not enough points to activate photo
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '401':
-          description: Authentication token missing
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '403':
-          description: Invalid token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '404':
-          description: Photo not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
-  /photos/rating:
-    get:
-      summary: Get photos for rating with filters
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: query
-          name: gender
-          schema:
-            type: string
-            enum: [male, female, other]
-        - in: query
-          name: minAge
-          schema:
-            type: number
-        - in: query
-          name: maxAge
-          schema:
-            type: number
-      responses:
-        '200':
-          description: Photos retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  photos:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        url:
-                          type: string
-                        userId:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            name:
-                              type: string
-                            gender:
-                              type: string
-                            age:
-                              type: number
-        '401':
-          description: Authentication token missing
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '403':
-          description: Invalid token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
-  /photos/my:
-    get:
-      summary: Get user's photos
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: User's photos retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  photos:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        url:
-                          type: string
-                        isActive:
-                          type: boolean
-                        createdAt:
-                          type: string
-                          format: date-time
-        '401':
-          description: Authentication token missing
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '403':
-          description: Invalid token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
-  /ratings:
-    post:
-      summary: Rate a photo
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                photoId:
-                  type: string
-                score:
-                  type: number
-                  minimum: 1
-                  maximum: 5
-              required: [photoId, score]
-      responses:
-        '201':
-          description: Rating submitted
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  rating:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      photoId:
-                        type: string
-                      score:
-                        type: number
-                  points:
-                    type: number
-        '400':
-          description: Cannot rate own photo or already rated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '401':
-          description: Authentication token missing
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '403':
-          description: Invalid token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '404':
-          description: Photo not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
-  /ratings/my:
-    get:
-      summary: Get ratings for user's photos
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Ratings retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ratings:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        photoId:
-                          type: string
-                        score:
-                          type: number
-                        userId:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            name:
-                              type: string
-        '401':
-          description: Authentication token missing
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '403':
-          description: Invalid token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-
+                    example: Failed to update profile
 components:
   securitySchemes:
     bearerAuth:
