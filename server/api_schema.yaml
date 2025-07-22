@@ -1,13 +1,9 @@
 openapi: 3.0.0
 info:
-  title: Photo Rating App API
+  title: Photo Rating API
   version: 1.0.0
-  description: API for a photo rating application with user authentication and photo management.
-servers:
-  - url: http://localhost:3001/api
-    description: Local development server
 paths:
-  /register:
+  /api/register:
     post:
       summary: Register a new user
       requestBody:
@@ -19,10 +15,10 @@ paths:
               properties:
                 email:
                   type: string
-                  example: user@example.com
                 password:
                   type: string
-                  example: password123
+                username:
+                  type: string
       responses:
         '201':
           description: User registered successfully
@@ -33,40 +29,17 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: User registered successfully
+                  token:
+                    type: string
+                  user:
+                    type: object
         '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Email and password are required
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: User with this email already exists
+          description: Email already registered
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Registration failed
-  /login:
+          description: Registration failed
+  /api/login:
     post:
-      summary: Login a user and get JWT token
+      summary: Login user
       requestBody:
         required: true
         content:
@@ -76,10 +49,8 @@ paths:
               properties:
                 email:
                   type: string
-                  example: user@example.com
                 password:
                   type: string
-                  example: password123
       responses:
         '200':
           description: Login successful
@@ -88,218 +59,153 @@ paths:
               schema:
                 type: object
                 properties:
+                  message:
+                    type: string
                   token:
                     type: string
-                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    type: object
         '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Email and password are required
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid password
+          description: Invalid credentials
         '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: User not found
+          description: User not found
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Login failed
-  /request-reset-password:
+          description: Login failed
+  /api/photos/upload:
     post:
-      summary: Request password reset token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  example: user@example.com
-      responses:
-        '200':
-          description: Password reset token generated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Password reset token generated
-                  resetToken:
-                    type: string
-                    example: abcd1234xyz
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Email is required
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: User not found
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Password reset request failed
-  /reset-password:
-    post:
-      summary: Reset user password
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  example: user@example.com
-                resetToken:
-                  type: string
-                  example: abcd1234xyz
-                newPassword:
-                  type: string
-                  example: newpassword123
-      responses:
-        '200':
-          description: Password reset successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Password reset successfully
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Email, reset token, and new password are required
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Password reset failed
-  /profile:
-    get:
-      summary: Get user profile
+      summary: Upload a photo
       security:
         - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
       responses:
-        '200':
-          description: User profile data
+        '201':
+          description: Photo uploaded successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  _id:
+                  message:
                     type: string
-                  email:
-                    type: string
-                  createdAt:
-                    type: string
-                    format: date-time
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Authentication token missing
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid token
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: User not found
+                  photo:
+                    type: object
+        '400':
+          description: No file uploaded
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Failed to fetch profile
+          description: File upload failed
+  /api/photos/{photoId}/toggle-active:
     put:
-      summary: Update user profile
+      summary: Toggle photo active status
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: photoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Photo status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  photo:
+                    type: object
+        '403':
+          description: Not enough points to activate photo
+        '404':
+          description: Photo not found or not owned by user
+        '500':
+          description: Failed to toggle photo status
+  /api/photos/rating:
+    get:
+      summary: Get photos for rating
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of active photos for rating
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photos:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          description: Failed to fetch photos for rating
+  /api/photos/my:
+    get:
+      summary: Get user's photos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of user's photos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photos:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          description: Failed to fetch user photos
+  /api/photos/{photoId}/stats:
+    get:
+      summary: Get photo statistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: photoId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Photo statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: object
+                    properties:
+                      totalRatings:
+                        type: number
+                      averageScore:
+                        type: number
+                      byGender:
+                        type: object
+                      byAge:
+                        type: object
+        '404':
+          description: Photo not found or not owned by user
+        '500':
+          description: Failed to fetch photo statistics
+  /api/ratings:
+    post:
+      summary: Rate a photo
       security:
         - bearerAuth: []
       requestBody:
@@ -309,64 +215,47 @@ paths:
             schema:
               type: object
               properties:
-                email:
+                photoId:
                   type: string
-                  example: updated@example.com
+                score:
+                  type: number
+      responses:
+        '201':
+          description: Photo rated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  rating:
+                    type: object
+        '403':
+          description: Cannot rate own photo or already rated
+        '404':
+          description: Photo not found
+        '500':
+          description: Failed to rate photo
+  /api/ratings/my:
+    get:
+      summary: Get user's ratings
+      security:
+        - bearerAuth: []
       responses:
         '200':
-          description: Updated user profile data
+          description: List of user's ratings
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  _id:
-                    type: string
-                  email:
-                    type: string
-                  createdAt:
-                    type: string
-                    format: date-time
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Authentication token missing
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Invalid token
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: User not found
+                  ratings:
+                    type: array
+                    items:
+                      type: object
         '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Failed to update profile
+          description: Failed to fetch user ratings
 components:
   securitySchemes:
     bearerAuth:

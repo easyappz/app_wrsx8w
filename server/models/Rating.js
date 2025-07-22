@@ -1,23 +1,23 @@
 const mongoose = require('mongoose');
 
 const RatingSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  photo: {
+  photoId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Photo',
     required: true
   },
-  value: {
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  score: {
     type: Number,
     required: true,
     min: 1,
     max: 10
   },
-  createdAt: {
+  ratedAt: {
     type: Date,
     default: Date.now
   }

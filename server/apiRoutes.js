@@ -39,6 +39,7 @@ router.post('/photos/upload', authenticateToken, photoController.uploadPhoto);
 router.put('/photos/:photoId/toggle-active', authenticateToken, photoController.togglePhotoActive);
 router.get('/photos/rating', authenticateToken, photoController.getPhotosForRating);
 router.get('/photos/my', authenticateToken, photoController.getUserPhotos);
+router.get('/photos/:photoId/stats', authenticateToken, photoController.getPhotoStats);
 
 // Rating Routes
 router.post('/ratings', authenticateToken, ratingController.ratePhoto);
