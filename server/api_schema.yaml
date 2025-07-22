@@ -2,8 +2,11 @@ openapi: 3.0.0
 info:
   title: Photo Rating API
   version: 1.0.0
+description: API for rating photos with user points system
+servers:
+  - url: /api
 paths:
-  /api/register:
+  /register:
     post:
       summary: Register a new user
       requestBody:
@@ -31,13 +34,16 @@ paths:
                     type: string
                   token:
                     type: string
-                  user:
-                    type: object
         '400':
-          description: Email already registered
-        '500':
-          description: Registration failed
-  /api/login:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /login:
     post:
       summary: Login user
       requestBody:
@@ -63,15 +69,78 @@ paths:
                     type: string
                   token:
                     type: string
-                  user:
-                    type: object
         '400':
           description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /profile:
+    get:
+      summary: Get user profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
         '404':
           description: User not found
-        '500':
-          description: Login failed
-  /api/photos/upload:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    put:
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                age:
+                  type: number
+                gender:
+                  type: string
+                username:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    type: object
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /photos/upload:
     post:
       summary: Upload a photo
       security:
@@ -79,16 +148,17 @@ paths:
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
-                photo:
+                url:
                   type: string
-                  format: binary
+                description:
+                  type: string
       responses:
         '201':
-          description: Photo uploaded successfully
+          description: Photo uploaded
           content:
             application/json:
               schema:
@@ -99,10 +169,15 @@ paths:
                   photo:
                     type: object
         '400':
-          description: No file uploaded
-        '500':
-          description: File upload failed
-  /api/photos/{photoId}/toggle-active:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /photos/{photoId}/toggle-active:
     put:
       summary: Toggle photo active status
       security:
@@ -125,20 +200,36 @@ paths:
                     type: string
                   photo:
                     type: object
-        '403':
-          description: Not enough points to activate photo
         '404':
-          description: Photo not found or not owned by user
-        '500':
-          description: Failed to toggle photo status
-  /api/photos/rating:
+          description: Photo not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /photos/rating:
     get:
-      summary: Get photos for rating
+      summary: Get photos for rating with filters
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: gender
+          schema:
+            type: string
+        - in: query
+          name: minAge
+          schema:
+            type: number
+        - in: query
+          name: maxAge
+          schema:
+            type: number
       responses:
         '200':
-          description: List of active photos for rating
+          description: Photos retrieved
           content:
             application/json:
               schema:
@@ -148,16 +239,23 @@ paths:
                     type: array
                     items:
                       type: object
-        '500':
-          description: Failed to fetch photos for rating
-  /api/photos/my:
+        '404':
+          description: No photos available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /photos/my:
     get:
       summary: Get user's photos
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: List of user's photos
+          description: User's photos retrieved
           content:
             application/json:
               schema:
@@ -167,11 +265,18 @@ paths:
                     type: array
                     items:
                       type: object
-        '500':
-          description: Failed to fetch user photos
-  /api/photos/{photoId}/stats:
+        '404':
+          description: No photos found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /photos/{photoId}/stats:
     get:
-      summary: Get photo statistics
+      summary: Get photo stats
       security:
         - bearerAuth: []
       parameters:
@@ -182,7 +287,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Photo statistics
+          description: Photo stats retrieved
           content:
             application/json:
               schema:
@@ -190,20 +295,16 @@ paths:
                 properties:
                   stats:
                     type: object
-                    properties:
-                      totalRatings:
-                        type: number
-                      averageScore:
-                        type: number
-                      byGender:
-                        type: object
-                      byAge:
-                        type: object
         '404':
-          description: Photo not found or not owned by user
-        '500':
-          description: Failed to fetch photo statistics
-  /api/ratings:
+          description: Photo not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /ratings:
     post:
       summary: Rate a photo
       security:
@@ -217,11 +318,11 @@ paths:
               properties:
                 photoId:
                   type: string
-                score:
+                rating:
                   type: number
       responses:
-        '201':
-          description: Photo rated successfully
+        '200':
+          description: Rating submitted
           content:
             application/json:
               schema:
@@ -229,22 +330,32 @@ paths:
                 properties:
                   message:
                     type: string
-                  rating:
-                    type: object
-        '403':
-          description: Cannot rate own photo or already rated
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '404':
           description: Photo not found
-        '500':
-          description: Failed to rate photo
-  /api/ratings/my:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /ratings/my:
     get:
       summary: Get user's ratings
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: List of user's ratings
+          description: User's ratings retrieved
           content:
             application/json:
               schema:
@@ -254,8 +365,15 @@ paths:
                     type: array
                     items:
                       type: object
-        '500':
-          description: Failed to fetch user ratings
+        '404':
+          description: No ratings found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 components:
   securitySchemes:
     bearerAuth:

@@ -1,57 +1,56 @@
-const Rating = require('../../models/Rating');
-const Photo = require('../../models/Photo');
-const User = require('../../models/User');
+const Photo = require('../models/Photo');
+const User = require('../models/User');
 
 // Rate a photo
 exports.ratePhoto = async (req, res) => {
   try {
-    const { photoId, score } = req.body;
-    const photo = await Photo.findById(photoId);
+    const { photoId, rating } = req.body;
+    const userId = req.user.id;
 
+    if (!photoId || rating === undefined) {
+      return res.status(400).json({ error: 'Photo ID and rating are required' });
+    }
+
+    // Check if photo exists and is active
+    const photo = await Photo.findOne({ _id: photoId, isActive: true });
     if (!photo) {
-      return res.status(404).json({ error: 'Photo not found' });
+      return res.status(404).json({ error: 'Photo not found or not active' });
     }
 
-    if (!photo.isActive) {
-      return res.status(403).json({ error: 'Photo is not active for rating' });
+    // Check if user has already rated this photo
+    const alreadyRated = photo.ratings.some(r => r.userId.toString() === userId);
+    if (alreadyRated) {
+      return res.status(400).json({ error: 'You have already rated this photo' });
     }
 
-    if (photo.userId.toString() === req.user.id) {
-      return res.status(403).json({ error: 'Cannot rate your own photo' });
-    }
-
-    const existingRating = await Rating.findOne({ photoId, userId: req.user.id });
-    if (existingRating) {
-      return res.status(403).json({ error: 'You have already rated this photo' });
-    }
-
-    const rating = new Rating({
-      photoId,
-      userId: req.user.id,
-      score
-    });
-
-    await rating.save();
-
-    photo.ratings.push(rating._id);
+    // Add rating to photo
+    photo.ratings.push({ userId, rating });
     await photo.save();
 
-    const user = await User.findById(req.user.id);
-    user.points += 1;
-    await user.save();
+    // Update rater's points (+1 for rating)
+    await User.findByIdAndUpdate(userId, { $inc: { points: 1 } });
 
-    res.status(201).json({ message: 'Photo rated successfully', rating });
+    // Update photo owner's points (-1 for receiving a rating)
+    await User.findByIdAndUpdate(photo.userId, { $inc: { points: -1 } });
+
+    return res.status(200).json({ message: 'Rating submitted successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to rate photo: ' + error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
 // Get user's ratings
 exports.getUserRatings = async (req, res) => {
   try {
-    const ratings = await Rating.find({ userId: req.user.id }).populate('photoId');
-    res.json({ ratings });
+    const userId = req.user.id;
+    const photos = await Photo.find({ 'ratings.userId': userId });
+
+    if (!photos || photos.length === 0) {
+      return res.status(404).json({ error: 'No ratings found for this user' });
+    }
+
+    return res.status(200).json({ ratings: photos });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch user ratings: ' + error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
