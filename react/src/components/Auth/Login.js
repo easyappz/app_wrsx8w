@@ -1,60 +1,81 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Form, Input, Button, Typography, Alert, Card, Row, Col } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { login } from '../../api/auth';
 
-function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+const { Title, Text } = Typography;
+
+const Login = () => {
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
+  const onFinish = async (values) => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await login({ email, password });
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        setSuccess('Вход выполнен успешно!');
-        setTimeout(() => navigate('/'), 1000);
-      }
+      const data = await login({
+        email: values.email,
+        password: values.password,
+      });
+      localStorage.setItem('token', data.token);
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Произошла ошибка при входе.');
+      setError(err.error || 'Произошла ошибка при входе');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="App card">
-      <h2>Вход</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Пароль"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Войти</button>
-      </form>
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
-      <p>
-        Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
-      </p>
-      <p>
-        Забыли пароль? <Link to="/forgot-password">Восстановить</Link>
-      </p>
-    </div>
+    <Row justify="center" align="middle" style={{ minHeight: '100vh' }}>
+      <Col xs={20} sm={16} md={12} lg={8}>
+        <Card style={{ padding: '20px', borderRadius: '8px', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' }}>
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <Title level={2}>Вход</Title>
+            <Text>Добро пожаловать обратно!</Text>
+          </div>
+          {error && <Alert message={error} type="error" showIcon style={{ marginBottom: '16px' }} />}
+          <Form
+            name="login"
+            initialValues={{ remember: true }}
+            onFinish={onFinish}
+            layout="vertical"
+          >
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[{ required: true, message: 'Пожалуйста, введите ваш email!' }, { type: 'email', message: 'Некорректный формат email!' }]}
+            >
+              <Input prefix={<UserOutlined />} placeholder="Email" />
+            </Form.Item>
+            <Form.Item
+              name="password"
+              label="Пароль"
+              rules={[{ required: true, message: 'Пожалуйста, введите ваш пароль!' }]}
+            >
+              <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
+            </Form.Item>
+            <Form.Item>
+              <Button type="primary" htmlType="submit" loading={loading} style={{ width: '100%' }}>
+                Войти
+              </Button>
+            </Form.Item>
+            <div style={{ textAlign: 'center' }}>
+              <Text>
+                Нет аккаунта? <a href="/register">Зарегистрироваться</a>
+              </Text>
+              <br />
+              <Text>
+                Забыли пароль? <a href="/forgot-password">Восстановить</a>
+              </Text>
+            </div>
+          </Form>
+        </Card>
+      </Col>
+    </Row>
   );
-}
+};
 
 export default Login;
